@@ -1,0 +1,72 @@
+{
+  "AppType": "ASP.NET Core",
+  "DetectionPatterns": [
+    {
+      "FileType": "csproj",
+      "Pattern": "Microsoft.AspNetCore.App",
+      "IsRegex": false
+    },
+    {
+      "FileType": "csproj",
+      "Pattern": "Microsoft.AspNetCore.Mvc",
+      "IsRegex": false
+    },
+    {
+      "FileType": "cs",
+      "Pattern": "WebApplication.Create",
+      "IsRegex": false,
+      "FileName": "Program.cs"
+    }
+  ],
+  "AppInsightsIndicators": [
+    "Microsoft.ApplicationInsights",
+    "ApplicationInsights.AspNetCore",
+    "TelemetryClient",
+    "AddApplicationInsightsTelemetry",
+    ".Track(Event|Exception|Request|Dependency|Metric|Trace|PageView)"
+  ],
+  "MigrationSuggestions": [
+    "Replace AddApplicationInsightsTelemetry() with AddOpenTelemetry().UseAzureMonitor()",
+    "Use Azure.Monitor.OpenTelemetry.AspNetCore package",
+    "Replace TelemetryClient with ActivitySource for tracking operations"
+  ],
+  "MigrationSteps": [
+    "1. Add the Azure Monitor OpenTelemetry package with the latest version:",
+    "```",
+    "dotnet add package Azure.Monitor.OpenTelemetry.AspNetCore --version '*'",
+    "```",
+
+    "2. In your Program.cs file, add and configure OpenTelemetry with Azure Monitor:",
+    "```csharp",
+    "using Azure.Monitor.OpenTelemetry.AspNetCore;",
+    "",
+    "var builder = WebApplication.CreateBuilder(args);",
+    "",
+    "// Add Azure Monitor OpenTelemetry",
+    "builder.Services.AddOpenTelemetry().UseAzureMonitor(options => {",
+    "    // Connection string can be specified in code, appsettings.json, or environment variables",
+    "    options.ConnectionString = \"InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://regionname.in.applicationinsights.azure.com/\";",
+    "});",
+    "```",
+
+    "3. For custom operations tracking, replace TelemetryClient with ActivitySource:",
+    "```csharp",
+    "using System.Diagnostics;",
+    "",
+    "public class MyService {",
+    "    private readonly ActivitySource _activitySource = new ActivitySource(\"MyCompany.MyApp\");",
+    "",
+    "    public void DoSomething() {",
+    "        // Start a new activity (replaces TelemetryClient.StartOperation)",
+    "        using var activity = _activitySource.StartActivity(\"CustomOperation\");",
+    "        activity?.SetTag(\"customProperty\", \"value\");",
+    "        ",
+    "        // Your code here",
+    "        ",
+    "        // Activity stops automatically when disposed",
+    "    }",
+    "}",
+    "```"
+  ],
+  "SampleCode": "```csharp\n// Program.cs\nusing Azure.Monitor.OpenTelemetry.AspNetCore;\n\nvar builder = WebApplication.CreateBuilder(args);\n\n// Add Azure Monitor OpenTelemetry\nbuilder.Services.AddOpenTelemetry().UseAzureMonitor(options => {\n    // Connection string can be specified in code, appsettings.json, or environment variables\n    options.ConnectionString = \"InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://regionname.in.applicationinsights.azure.com/\";\n});\n\n// Sample for custom operations tracking\nusing System.Diagnostics;\n\npublic class MyService {\n    private readonly ActivitySource _activitySource = new ActivitySource(\"MyCompany.MyApp\");\n\n    public void DoSomething() {\n        // Start a new activity (replaces TelemetryClient.StartOperation)\n        using var activity = _activitySource.StartActivity(\"CustomOperation\");\n        activity?.SetTag(\"customProperty\", \"value\");\n        \n        // Your code here\n        \n        // Activity stops automatically when disposed\n    }\n}\n```"
+}

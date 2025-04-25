@@ -1,0 +1,67 @@
+{
+  "AppType": "Console",
+  "DetectionPatterns": [
+    {
+      "FileType": "csproj",
+      "Pattern": "<OutputType>Exe</OutputType>",
+      "IsRegex": false
+    }
+  ],
+  "AppInsightsIndicators": [
+    "Microsoft.ApplicationInsights",
+    "TelemetryClient",
+    "TelemetryConfiguration",
+    ".Track(Event|Exception|Request|Dependency|Metric|Trace|PageView)"
+  ],
+  "MigrationSuggestions": [
+    "Use the OpenTelemetry SDK with Azure.Monitor.OpenTelemetry.Exporter package",
+    "Initialize OpenTelemetry with TracerProvider in your Program.cs",
+    "Replace TelemetryClient with ActivitySource for tracking operations"
+  ],
+  "MigrationSteps": [
+    "1. Add the Azure Monitor OpenTelemetry package:",
+    "```",
+    "dotnet add package Azure.Monitor.OpenTelemetry.Exporter",
+    "```",
+    
+    "2. In your Program.cs file, configure OpenTelemetry:",
+    "```csharp",
+    "using OpenTelemetry;",
+    "using OpenTelemetry.Resources;",
+    "using OpenTelemetry.Trace;",
+    "using Azure.Monitor.OpenTelemetry.Exporter;",
+    "using System.Diagnostics;",
+    "",
+    "// Define your ActivitySource",
+    "var myActivitySource = new ActivitySource(\"MyCompany.MyApp\");",
+    "",
+    "// Configure OpenTelemetry",
+    "using var tracerProvider = Sdk.CreateTracerProviderBuilder()",
+    "    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(\"MyServiceName\"))",
+    "    .AddSource(myActivitySource.Name)",
+    "    .AddAzureMonitorTraceExporter(options => {",
+    "        options.ConnectionString = \"InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://regionname.in.applicationinsights.azure.com/\";",
+    "    })",
+    "    .Build();",
+    "```",
+    
+    "3. For custom operations tracking, use ActivitySource:",
+    "```csharp",
+    "// Your application code",
+    "using (var activity = myActivitySource.StartActivity(\"SampleOperation\"))",
+    "{",
+    "    activity?.SetTag(\"customDimension\", \"value\");",
+    "    // Your code here",
+    "    // Exception handling example:",
+    "    try {",
+    "        // Code that might throw",
+    "    }",
+    "    catch(Exception ex) {",
+    "        activity?.SetStatus(ActivityStatusCode.Error, ex.Message);",
+    "        activity?.RecordException(ex);",
+    "    }",
+    "}",
+    "```"
+  ],
+  "SampleCode": "```csharp\n// Program.cs\nusing OpenTelemetry;\nusing OpenTelemetry.Resources;\nusing OpenTelemetry.Trace;\nusing Azure.Monitor.OpenTelemetry.Exporter;\nusing System.Diagnostics;\n\n// Define your ActivitySource\nvar myActivitySource = new ActivitySource(\"MyCompany.MyApp\");\n\n// Configure OpenTelemetry\nusing var tracerProvider = Sdk.CreateTracerProviderBuilder()\n    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(\"MyServiceName\"))\n    .AddSource(myActivitySource.Name)\n    .AddAzureMonitorTraceExporter(options => {\n        options.ConnectionString = \"InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://regionname.in.applicationinsights.azure.com/\";\n    })\n    .Build();\n\n// Your application code\nusing (var activity = myActivitySource.StartActivity(\"SampleOperation\"))\n{\n    activity?.SetTag(\"customDimension\", \"value\");\n    // Your code here\n}\n```"
+}
