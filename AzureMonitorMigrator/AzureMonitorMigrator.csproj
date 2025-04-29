@@ -11,5 +11,14 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
     <PackageReference Include="ModelContextProtocol" Version="0.1.0-preview.10" />
   </ItemGroup>
+	
+  <ItemGroup>
+    <None Update="Rules\aspnetcore.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Rules\console.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
